@@ -1,0 +1,6 @@
+app/locale/en_US/*  app/locale/en_US/
+app/code/local/Mage/OrderMonitor  app/code/local/Mage/OrderMonitor
+app/etc/modules/Mage_OrderMonitor.xml app/etc/modules/Mage_OrderMonitor.xml
+app/design/frontend/base/default/layout/ordermonitor.xml app/design/frontend/base/default/layout/ordermonitor.xml
+app/design/frontend/base/default/template/ordermonitor app/design/frontend/base/default/template/ordermonitor
+skin/frontend/base/default/css/ordermonitor.css skin/frontend/base/default/css/ordermonitor.css
