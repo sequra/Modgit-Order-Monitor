@@ -18,7 +18,9 @@
 
 class Mage_OrderMonitor_Model_Cron
 {
+    var $sequra_methods = array('sequrapayment','sequrapartpayment');
     const XML_PATH_CANCEL_PENDING = 'ordermonitor/cron/cancel_pending';
+    const XML_PATH_CANCEL_SEQURA = 'ordermonitor/cron/cancel_sequra';
     const XML_PATH_CANCEL_AFTER   = 'ordermonitor/cron/cancel_after';
     const XML_PATH_CANCEL_STATUS  = 'ordermonitor/cron/cancel_status';
 
@@ -26,11 +28,24 @@ class Mage_OrderMonitor_Model_Cron
     {
         $orders = Mage::getModel('sales/order')
             ->getCollection()
-            ->addFieldToFilter('state', Mage_Sales_Model_Order::STATE_PENDING_PAYMENT);
+            ->addFieldToFilter('state',
+              array(
+                array('eq'=>Mage_Sales_Model_Order::STATE_PENDING_PAYMENT),
+                array('eq'=>Mage_Sales_Model_Order::STATE_HOLDED)
+              )
+            );
 
         foreach ($orders as $order) {
             if (!Mage::getStoreConfigFlag(self::XML_PATH_CANCEL_PENDING, $order->getStoreId())) {
                 continue;
+            }
+
+            if (Mage_Sales_Model_Order::STATE_HOLDED == $order->getState()) {
+                if(!Mage::getStoreConfigFlag(self::XML_PATH_CANCEL_SEQURA, $order->getStoreId()))
+                    continue;
+                if(in_array($order->getPayment()->getMethod(),$this->sequra_methods)){
+                    if($order->canUnhold()) $order->unhold()->save();
+                }
             }
 
             if (!intval(Mage::getStoreConfig(self::XML_PATH_CANCEL_AFTER, $order->getStoreId()))) {
@@ -47,12 +62,10 @@ class Mage_OrderMonitor_Model_Cron
 
             try {
                 $order->cancel();
-
                 if ($status = Mage::getStoreConfig(self::XML_PATH_CANCEL_STATUS, $order->getStoreId())) {
                     $order->addStatusHistoryComment('', $status)
-                          ->setIsCustomerNotified(null);
+                        ->setIsCustomerNotified(null);
                 }
-
                 $order->save();
             } catch (Exception $e) {
                 Mage::logException($e);
