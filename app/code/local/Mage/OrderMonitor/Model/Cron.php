@@ -40,23 +40,23 @@ class Mage_OrderMonitor_Model_Cron
                 continue;
             }
 
-            if (Mage_Sales_Model_Order::STATE_HOLDED == $order->getState()) {
-                if(!Mage::getStoreConfigFlag(self::XML_PATH_CANCEL_SEQURA, $order->getStoreId()))
-                    continue;
-                if(in_array($order->getPayment()->getMethod(),$this->sequra_methods)){
-                    if($order->canUnhold()) $order->unhold()->save();
-                }
-            }
-
             if (!intval(Mage::getStoreConfig(self::XML_PATH_CANCEL_AFTER, $order->getStoreId()))) {
                 continue;
             }
 
-            if (!$order->canCancel() || $order->hasInvoices() || $order->hasShipments()) {
-                continue;
+            if (strtotime(Varien_Date::now()) - strtotime($order->getCreatedAt()) < Mage::getStoreConfig(self::XML_PATH_CANCEL_AFTER, $order->getStoreId()) * 60) {
+              continue;
             }
 
-            if (strtotime(Varien_Date::now()) - strtotime($order->getCreatedAt()) < Mage::getStoreConfig(self::XML_PATH_CANCEL_AFTER, $order->getStoreId()) * 60) {
+            if (Mage_Sales_Model_Order::STATE_HOLDED == $order->getState()) {
+              if(!Mage::getStoreConfigFlag(self::XML_PATH_CANCEL_SEQURA, $order->getStoreId()))
+                continue;
+              if(in_array($order->getPayment()->getMethod(),$this->sequra_methods)){
+                if($order->canUnhold()) $order->unhold()->save();
+              }
+            }
+
+            if (!$order->canCancel() || $order->hasInvoices() || $order->hasShipments()) {
                 continue;
             }
 
